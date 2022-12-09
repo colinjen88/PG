@@ -10,6 +10,7 @@ print('='*20, '《 歷年股價法估價 》', '='*20)
 stock_num = input('輸入股票代號：')
 how_long = int(input('想統計最近多少年的股價?(建議7~10)：'))
 safe_ratio = float(input('安全邊際想設幾%?(建議0.85~0.9,愈保守設愈低)：'))
+print('$'*50)
 
 header_info = {
     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36'
@@ -54,28 +55,33 @@ year_value = {
     'safe_avg': [],
     'safe_low': []
 }
-# 標準統計值 (小數位的值不重要，故使用 round取不精準的四捨五入到第一位)
+# 參考資訊 (小數位的值不重要，故使用 round取不精準的四捨五入到第一位)
+year_value['highest'] = round(max(yr_high))  # 統計區間最高價
+year_value['lowest'] = round(min(yr_low))  # 統計區間最低價
+# 標準統計值
 year_value['year_list'] = yr_list  # 參與統計的年份列表
-year_value['high'] = round(max(yr_high))  # 統計區間最高價-昂貴價 [↑長線分批賣出]
-year_value['avg'] = round(sum(yr_avg)/len(yr_avg), 1)  # 統計區間平均值-合理價 [↑波段分批賣出]
-year_value['low'] = round(min(yr_low))  # 統計區間最低價-便宜價 [↓考慮分批買進]
+year_value['high'] = round(sum(yr_high)/len(yr_high))  # 區間高價平均-昂貴價 [↑長線分批賣出]
+year_value['avg'] = round(sum(yr_avg)/len(yr_avg), 1)  # 區間平均值-合理價 [↑波段分批賣出]
+year_value['low'] = round(sum(yr_low)/len(yr_low), 1)  # 區間低價平均-便宜價 [↓考慮分批買進]
 # 安全邊際值
-year_value['safe_high'] = round(max(yr_high)*safe_ratio, 1)
+year_value['safe_high'] = round((max(yr_high)/len(yr_high))*safe_ratio, 1)
 year_value['safe_avg'] = round((sum(yr_avg)/len(yr_avg))*safe_ratio, 1)
-year_value['safe_low'] = round(min(yr_low)*safe_ratio, 1)
-
+year_value['safe_low'] = round((sum(yr_low)/len(yr_low))*safe_ratio, 1)
 
 # 《《《 顯示最終結果 》》》
 print(f'股票名稱：「{stock_name}」')
 print(f"列入統計的年份: {year_value['year_list']} (最近{how_long}年股價)")
+print(">>>參考數據")
+print(f"區間最高價: {year_value['highest']}")
+print(f"區間最低價: {year_value['lowest']}")
 print(">>>標準估價")
-print(f"區間最高價(昂貴價): {year_value['high']}")
+print(f"高價平均值(昂貴價): {year_value['high']}")
 print(f"區間平均價(合理價): {year_value['avg']}")
-print(f"區間最低價(便宜價): {year_value['low']}")
+print(f"低價平均值(便宜價): {year_value['low']}")
 print(f">>>安全邊際估價(x {(safe_ratio*100)}%)")
-print(f"區間最高價(安全昂貴價): {year_value['safe_high']}")
+print(f"高價平均值(安全昂貴價): {year_value['safe_high']}")
 print(f"區間平均價(安全合理價): {year_value['safe_avg']}")
-print(f"區間最低價(安全便宜價): {year_value['safe_low']}")
+print(f"低價平均值(安全便宜價): {year_value['safe_low']}")
 
 # 《《《 將結果寫進資料庫 》》》
 # DB_step1 建立資料庫
@@ -87,6 +93,8 @@ cursor.execute(
         stock_id TEXT PRIMARY KEY NOT NULL,
         stock_name TEXT NOT NULL,
         year_list TEXT NOT NULL,
+        highest REAL NOT NULL,
+        lowest REAL NOT NULL,
         high REAL NOT NULL,
         avg REAL NOT NULL,
         low REAL NOT NULL,
@@ -101,9 +109,13 @@ connection.commit()
 # DB_step2 寫入資料庫 (使用「INSERT OR REPLACE/IGNORE」 ←解決id重覆會報錯的問題)
 cursor.execute(
     f'''
-    INSERT OR REPLACE INTO stock_value (stock_id, stock_name, year_list,high,avg,low,safe_high,safe_avg,safe_low)
-    VALUES ("{stock_num}","{stock_name}", "{year_value['year_list']}", {year_value['high']},{year_value['avg']},{year_value['low']},{year_value['safe_high']},{year_value['safe_avg']},{year_value['safe_low']});
+    INSERT OR REPLACE INTO stock_value (stock_id, stock_name, year_list,highest,lowest,high,avg,low,safe_high,safe_avg,safe_low)
+    VALUES ("{stock_num}","{stock_name}", "{year_value['year_list']}",{year_value['highest']},{year_value['lowest']},{year_value['high']},{year_value['avg']},{year_value['low']},{year_value['safe_high']},{year_value['safe_avg']},{year_value['safe_low']});
     '''
 )
 connection.commit()
 connection.close()
+
+print('-'*30)
+print('資料已寫進 year_value.db 資料庫')
+print('-'*30)
