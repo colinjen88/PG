@@ -64,7 +64,7 @@ year_value['high'] = round(sum(yr_high)/len(yr_high))  # 區間高價平均-昂�
 year_value['avg'] = round(sum(yr_avg)/len(yr_avg), 1)  # 區間平均值-合理價 [↑波段分批賣出]
 year_value['low'] = round(sum(yr_low)/len(yr_low), 1)  # 區間低價平均-便宜價 [↓考慮分批買進]
 # 安全邊際值
-year_value['safe_high'] = round((max(yr_high)/len(yr_high))*safe_ratio, 1)
+year_value['safe_high'] = round((sum(yr_high)/len(yr_high))*safe_ratio, 1)
 year_value['safe_avg'] = round((sum(yr_avg)/len(yr_avg))*safe_ratio, 1)
 year_value['safe_low'] = round((sum(yr_low)/len(yr_low))*safe_ratio, 1)
 
