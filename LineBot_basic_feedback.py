@@ -16,11 +16,11 @@ import csv
 
 app = Flask(__name__)
 
-# LINE_CHANNEL_SECRET 和 LINE_CHANNEL_ACCESS_TOKEN物外流
-with open("linebotapi.csv", "r", newline="") as csvfile1:
-    linebotapi = csvfile1.readline()
-with open("webhook.csv", "r", newline="") as csvfile2:
-    webhook = csvfile2.readline().replace("\n", "")
+# LINE_CHANNEL_SECRET 和 LINE_CHANNEL_ACCESS_TOKEN避免外流,改存外部檔案
+with open("../linebotapi.csv", "r", newline="") as csvfile:
+    temp = csvfile.readline().split(',', 2)
+    linebotapi = temp[0]
+    webhook = temp[1]
 line_bot_api = LineBotApi(linebotapi)
 handler = WebhookHandler(webhook)
 
