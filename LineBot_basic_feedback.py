@@ -43,7 +43,7 @@ def callback():
     return 'OK'
 
 
-# decorator 負責判斷 event 為 MessageEvent 實例，event.message 為 TextMessage 實例。所以此為處理 TextMessage 的 handler
+# decorator 負責判斷 event為 MessageEvent 實例，event.message 為 TextMessage 實例。所以此為處理 TextMessage 的 handler
 
 @ handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
