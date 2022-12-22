@@ -153,7 +153,7 @@ def judge_value(high_price, middle_price, low_price, realtime_price):
 # ===測試用===(縮短時間)
 # @sched.scheduled_job('interval', minutes=linebot_cycle)
 # 設計一個定時執行程式在週間, 每周一 ~ 五，9點到14點，每30分鐘執行一次 (台股開盤時間)
-@sched.scheduled_job('cron', day_of_week='mon-fri', hour='9-14' minute=linebot_cycle)
+@sched.scheduled_job('cron', day_of_week='mon-fri', hour='9-14' minutes=linebot_cycle)
 def get_notify():
     print(f'每{linebot_cycle}分,從Google Sheet讀取資料...')
     # 使用twstock套件,查詢即時報價、時間點、股票名稱
