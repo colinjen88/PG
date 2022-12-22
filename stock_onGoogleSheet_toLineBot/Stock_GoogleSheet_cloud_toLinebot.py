@@ -120,7 +120,7 @@ def crawl_for_stock_price(stock_num):
 # @sched.scheduled_job('interval', minutes=crawl_cycle)
 def crawl_for_stock_price_job():
     # 要注意不要太頻繁抓取
-    print(f'每{crawl_cycle}分執行一次爬蟲程式，並寫入GoogleSheet')
+    print(f'每{crawl_cycle}日執行一次爬蟲程式，並寫入GoogleSheet')
     # 每次清除之前資料
     worksheet.clear()
     # 將標頭插入第 1 列
@@ -148,7 +148,7 @@ def judge_value(high_price, middle_price, low_price, realtime_price):
 # 設計一個定時執行程式在週間, 每周一 ~ 五，9點到14點，每小時執行一次 (台股開盤時間)
 @sched.scheduled_job('cron', day_of_week='mon-fri', hour='9-14')
 def get_notify():
-    print(f'每{linebot_cycle}分,從Google Sheet讀取資料...')
+    print(f'台股開般時間，每小時,從Google Sheet讀取資料...')
     # 使用twstock套件,查詢即時報價、時間點、股票名稱
     realprice = twstock.realtime.get(stock_num)['realtime']['latest_trade_price']
     realprice_dot = float(realprice)
