@@ -26,14 +26,13 @@ SPREAD_SHEETS_KEY = os.environ.get('SPREAD_SHEETS_KEY')
 # LINE Chatbot token
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_USER_ID = os.environ.get('LINE_USER_ID')
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
 
 # 參數設定 #####
 stock_num = '2330'  # 要抓取的股票代碼
 how_long = 6  # 以最近幾年為計算範圍
-crawl_cycle = 2  # (小時)抓取股價的週期
-linebot_cycle = 45  # (分)Line訊息傳送週期 (並抓即時股價比較)
+crawl_cycle = 1  # (日)抓取股價的週期
+# linebot_cycle = 1  # (分)Line訊息傳送週期 (並抓即時股價比較)
 
 # 金鑰檔案路徑
 credential_file_path = 'credentials.json'
@@ -43,9 +42,7 @@ credential_file_path = 'credentials.json'
 
 def auth_gsp_client(file_path, scopes):
     # 從檔案讀取金鑰資料
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
-        file_path, scopes)
-
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(file_path, scopes)
     return gspread.authorize(credentials)
 
 
@@ -59,8 +56,7 @@ def crawl_for_stock_price(stock_num):
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36'
     }
     # 《《《 從 台灣證券交易所 抓取資料並整理 》》》
-    resp = requests.get(
-        f"https://www.twse.com.tw/exchangeReport/FMNPTK?response=json&stockNo={stock_num}", headers=header_info)
+    resp = requests.get(f"https://www.twse.com.tw/exchangeReport/FMNPTK?response=json&stockNo={stock_num}", headers=header_info)
     resp.encoding = 'utf-8-sig'
 
     # 把json轉給python可以使用
@@ -98,12 +94,9 @@ def crawl_for_stock_price(stock_num):
     year_value['lowest'] = round(min(yr_low))  # 統計區間最低價
     # 標準統計值
     year_value['year_list'] = yr_list  # 參與統計的年份列表
-    year_value['high'] = round(
-        sum(yr_high)/len(yr_high))  # 區間高價平均-昂貴價 [↑長線分批賣出]
-    year_value['avg'] = round(sum(yr_avg)/len(yr_avg),
-                              1)  # 區間平均值-合理價 [↑波段分批賣出]
-    year_value['low'] = round(sum(yr_low)/len(yr_low),
-                              1)  # 區間低價平均-便宜價 [↓考慮分批買進]
+    year_value['high'] = round(sum(yr_high)/len(yr_high))  # 區間高價平均-昂貴價 [↑長線分批賣出]
+    year_value['avg'] = round(sum(yr_avg)/len(yr_avg),1)  # 區間平均值-合理價 [↑波段分批賣出]
+    year_value['low'] = round(sum(yr_low)/len(yr_low),1)  # 區間低價平均-便宜價 [↓考慮分批買進]
 
     # 《《《 顯示最終結果 》》》
     print(f"股票名稱：「{stock_name}」")
@@ -118,13 +111,13 @@ def crawl_for_stock_price(stock_num):
     print('-'*30)
     # 將資料插入第 2 列
     print('寫入資料至Google Sheet...')
-    worksheet.insert_row([stock_num, year_value['high'],
-                         year_value['avg'], year_value['low']], 2)
+    worksheet.insert_row([stock_num, year_value['high'],year_value['avg'], year_value['low']], 2)
 
 # decorator 設定 Scheduler 的類型和參數，例如 interval 間隔多久執行
 
-
-@sched.scheduled_job('interval', hours=crawl_cycle)
+# 每一日抓一次近年股價統計資料
+@sched.scheduled_job('interval', days=crawl_cycle)
+# @sched.scheduled_job('interval', minutes=crawl_cycle)
 def crawl_for_stock_price_job():
     # 要注意不要太頻繁抓取
     print(f'每{crawl_cycle}分執行一次爬蟲程式，並寫入GoogleSheet')
@@ -151,14 +144,16 @@ def judge_value(high_price, middle_price, low_price, realtime_price):
 
 
 # ===測試用===(縮短時間)
-# @sched.scheduled_job('interval', minutes=linebot_cycle)
-# 設計一個定時執行程式在週間, 每周一 ~ 五，9點到14點，每30分鐘執行一次 (台股開盤時間)
-@sched.scheduled_job('cron', day_of_week='mon-fri', hour='9-14' minutes=linebot_cycle)
+# @sched.scheduled_job('interval', seconds=6)
+# 設計一個定時執行程式在週間, 每周一 ~ 五，9點到14點，每小時執行一次 (台股開盤時間)
+@sched.scheduled_job('cron', day_of_week='mon-fri', hour='9-14')
 def get_notify():
     print(f'每{linebot_cycle}分,從Google Sheet讀取資料...')
     # 使用twstock套件,查詢即時報價、時間點、股票名稱
-    realprice = twstock.realtime.get(
-        stock_num)['realtime']['latest_trade_price']
+    realprice = twstock.realtime.get(stock_num)['realtime']['latest_trade_price']
+    realprice_dot = float(realprice)
+    rrr = twstock.realtime.get('2330')
+    print(rrr)
     realtime = twstock.realtime.get(stock_num)['info']['time']
     stockname = twstock.realtime.get(stock_num)['info']['name']
     # 讀取google sheet資料
@@ -173,9 +168,9 @@ def get_notify():
     msg_avg = stock_item_lists[0][2] + price_avg
     msg_low = stock_item_lists[0][3] + price_low
     # 判斷目前股價位於什麼價值位階
-    show_value = judge_value(price_high, price_avg, price_low, realprice)
+    show_value = judge_value(float(price_high), float(price_avg), float(price_low), realprice_dot)
     # 整合要傳送到line的資訊
-    msg_to_line = f'{msg_num},{stockname} \n 現在股價:【{realprice}】\n | {msg_high} | {msg_avg} | {msg_low} \n "即時股價資料時間："{realtime} \n ======= \n 價值判定：《 {show_value} 》'
+    msg_to_line = f'{msg_num},{stockname} \n 現在股價:【{round(realprice_dot,2)}】\n | {msg_high} | {msg_avg} | {msg_low} \n "即時股價資料時間："{realtime} \n ======= \n 價值判定：《 {show_value} 》'
     line_bot_api.push_message(
         LINE_USER_ID,
         TextSendMessage(text=msg_to_line)
