@@ -26,7 +26,7 @@ SPREAD_SHEETS_KEY = os.environ.get('SPREAD_SHEETS_KEY')
 # LINE Chatbot token
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_USER_ID = os.environ.get('LINE_USER_ID')
-
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
 # 參數設定 #####
 stock_num = '2330'  # 要抓取的股票代碼
