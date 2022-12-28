@@ -64,7 +64,7 @@ def handle_message(event):
         result_316 = fund316(result)
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text= "『" + message + "類別 』，316法則篩選結果： \n" + result_316.to_string().replace(" ","")))
+            TextSendMessage(text= "『" + message + " 』類別，316法則篩選結果： \n" + result_316.to_string().replace(" ","")))
 
 #=== 基本爬蟲分析程式
 # ===取得基金(晨星)績效列表(&超鏈結)
@@ -72,9 +72,6 @@ fund_sort_list = []
 dict_info = {}
 fund_link = ''
 def queryFund(msg):
-    #目標是「基金評比(晨星)-日本中小型股票」 資料位於 #ctl00_ContentPlaceHolder1_TableClassList的table之中 ([0]是取出第一筆)
-    # 向網站發送 HTTP 請求，將網頁的 HTML 格式的回應內容取回
-    # url = 'https://www.sitca.org.tw/ROC/Industry/IN2421.aspx'
     #這網址為近三個月報酬率排序(由高至低) txtOrderby為排序參數，txtOrderby為排序參數，2是指以三個月做排序=2是指以三個月做排序
     url = 'https://www.sitca.org.tw/ROC/Industry/IN2421.aspx?txtOrderby=2'
     response = requests.get(url, headers=headers)
@@ -107,13 +104,14 @@ def queryFund(msg):
 
 # ===基金做 316篩選
 def fund316(res):
+    # 基礎網址+各分頁網址(res)
     result_url = 'https://www.sitca.org.tw/ROC/Industry/'+ res
     # 網路爬蟲抓取資料
     resp = requests.get(result_url, headers=headers)
     # 使用BeautifulSoup解析器，解析資料
     soup_316 = BeautifulSoup(resp.text, 'html.parser')
 
-    #目標是「基金評比(晨星)-日本中小型股票」 資料位於 #ctl00_ContentPlaceHolder1_TableClassList的table之中 ([0]是取出第一筆)
+    #分頁資料位於 #ctl00_ContentPlaceHolder1_TableClassList的table之中 ([0]是取出第一筆)
     table_content = soup_316.select('#ctl00_ContentPlaceHolder1_TableClassList')[0]
 
     #bs4的.prettify()格式化(排版美化)資料
