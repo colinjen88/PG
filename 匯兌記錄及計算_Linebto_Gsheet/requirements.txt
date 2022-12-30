@@ -1,0 +1,6 @@
+gunicorn==20.0.4
+Flask==1.1.1
+line-bot-sdk==1.16.0
+twder==0.1.4
+gspread
+oauth2client
